@@ -1,17 +1,20 @@
-import type React from "react"
-import type { Metadata } from "next"
-import { Inter } from "next/font/google"
-import "./globals.css"
-import Navigation from "@/components/navigation"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
+// app/layout.tsx
+'use client'
 
-const inter = Inter({ subsets: ["latin"] })
+import type React from 'react'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import Navigation from '@/components/navigation'
+import { ThemeProvider } from '@/components/theme-provider'
+import { Toaster } from '@/components/ui/toaster'
+
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "AI Dialer - Smart Communication Platform",
-  description: "AI-powered dialer application for contact management, drip campaigns, and text messaging",
-    generator: 'v0.dev'
+  title: 'AI Dialer - Smart Communication Platform',
+  description: 'AI-powered dialer application for contact management, drip campaigns, and text messaging',
+  generator: 'v0.dev',
 }
 
 export default function RootLayout({
@@ -21,13 +24,22 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      {/* ThemeProvider here lets next-themes toggle class="dark" on <html> */}
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <body
+          className={`
+            ${inter.className}
+            min-h-screen
+            bg-white text-gray-900
+            dark:bg-gray-900 dark:text-gray-100
+            transition-colors duration-200
+          `}
+        >
           <Navigation />
           <main>{children}</main>
           <Toaster />
-        </ThemeProvider>
-      </body>
+        </body>
+      </ThemeProvider>
     </html>
   )
 }
