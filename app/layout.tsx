@@ -1,7 +1,5 @@
 // app/layout.tsx
-'use client'
-
-import type React from 'react'
+import React from 'react'
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
@@ -17,14 +15,10 @@ export const metadata: Metadata = {
   generator: 'v0.dev',
 }
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      {/* ThemeProvider here lets next-themes toggle class="dark" on <html> */}
+      {/* ThemeProvider is a client component; it will toggle class="dark" on <html> */}
       <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
         <body
           className={`
