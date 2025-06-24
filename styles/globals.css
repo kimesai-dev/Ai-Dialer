@@ -91,4 +91,23 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+  .dark .bg-white {
+    @apply bg-card;
+  }
+  .dark .bg-gray-50 {
+    @apply bg-background;
+  }
+  .dark .text-gray-900,
+  .dark .text-gray-800 {
+    @apply text-foreground;
+  }
+  .dark .text-gray-700,
+  .dark .text-gray-600,
+  .dark .text-gray-500,
+  .dark .text-gray-400 {
+    @apply text-muted-foreground;
+  }
+  .dark .border-gray-300 {
+    @apply border-border;
+  }
 }
