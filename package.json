@@ -32,12 +32,12 @@
     "clsx": "^2.1.1",
     "lucide-react": "^0.263.1",
     "next": "14.0.0",
+    "next-themes": "^0.2.1",
     "react": "^18",
     "react-dom": "^18",
     "react-hook-form": "^7.58.1",
     "tailwind-merge": "^1.14.0",
     "tailwindcss-animate": "^1.0.7",
-    "next-themes": "^0.2.0",
     "twilio": "^4.19.0",
     "zod": "^3.25.67"
   },
