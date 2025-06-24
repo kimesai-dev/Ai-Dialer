@@ -3,12 +3,14 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
-import { Phone, Users, Calendar, MessageSquare, Menu, X, BarChart3, Settings } from "lucide-react"
+import { Phone, Users, Calendar, MessageSquare, Menu, X, BarChart3, Settings, Sun, Moon } from "lucide-react"
 
 export default function Navigation() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const pathname = usePathname()
+  const { resolvedTheme, setTheme } = useTheme()
 
   const navigation = [
     { name: "Dashboard", href: "/", icon: BarChart3 },
@@ -35,7 +37,7 @@ export default function Navigation() {
           <div className="hidden md:flex items-center space-x-8">
             {navigation.map((item) => {
               const Icon = item.icon
-              const isActive = pathname === item.href
+              const isActive = pathname.startsWith(item.href)
               return (
                 <Link
                   key={item.name}
@@ -49,6 +51,9 @@ export default function Navigation() {
                 </Link>
               )
             })}
+            <Button variant="ghost" size="sm" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark") }>
+              {resolvedTheme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+            </Button>
           </div>
 
           {/* Mobile menu button */}
@@ -65,7 +70,7 @@ export default function Navigation() {
             <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 border-t">
               {navigation.map((item) => {
                 const Icon = item.icon
-                const isActive = pathname === item.href
+                const isActive = pathname.startsWith(item.href)
                 return (
                   <Link
                     key={item.name}
@@ -80,6 +85,10 @@ export default function Navigation() {
                   </Link>
                 )
               })}
+              <Button variant="ghost" size="sm" onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark") } className="w-full justify-start">
+                {resolvedTheme === "dark" ? <Sun className="h-5 w-5 mr-3" /> : <Moon className="h-5 w-5 mr-3" />}
+                {resolvedTheme === "dark" ? "Light Mode" : "Dark Mode"}
+              </Button>
             </div>
           </div>
         )}

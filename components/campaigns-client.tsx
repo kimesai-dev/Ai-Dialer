@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import { Plus, Play, Pause, Edit, Trash2, Calendar, Users, TrendingUp } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   Dialog,
@@ -58,7 +59,10 @@ export default function CampaignsClient({ initialCampaigns, isDemo }: CampaignsC
 
   const handleCreateCampaign = async (formData: FormData) => {
     if (isDemo) {
-      alert("Campaign creation requires Supabase connection")
+      toast({
+        title: "Action unavailable",
+        description: "Campaign creation requires Supabase connection",
+      })
       return
     }
 
