@@ -171,36 +171,41 @@ export default async function Dashboard() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-   
-      
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-800">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
           <div className="flex items-center gap-3 mb-2">
-            <h1 className="text-3xl font-bold text-gray-900">AI Dialer Dashboard</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+              AI Dialer Dashboard
+            </h1>
             {stats.isDemo && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200">
                 Demo Mode
               </span>
             )}
           </div>
-          <p className="text-gray-600">Manage your contacts, campaigns, and communications</p>
+          <p className="text-gray-600 dark:text-gray-400">
+            Manage your contacts, campaigns, and communications
+          </p>
           {stats.isDemo && (
-            <p className="text-sm text-yellow-700 mt-1">Connect to Supabase to enable real data persistence</p>
+            <p className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+              Connect to Supabase to enable real data persistence
+            </p>
           )}
         </div>
 
         {/* Live Data Indicator */}
         {!stats.isDemo && (
-          <Card className="mb-6 bg-green-50 border-green-200">
+          <Card className="mb-6 bg-green-50 dark:bg-green-900 border-green-200 dark:border-green-700">
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-green-800 font-medium">Live Data Connected</span>
-                <span className="text-green-600 text-sm">
-                  • {stats.totalContacts} contacts • {stats.activeCampaigns} active campaigns • {stats.messagesToday}{" "}
-                  messages today
+                <span className="text-green-800 dark:text-green-200 font-medium">
+                  Live Data Connected
+                </span>
+                <span className="text-green-600 dark:text-green-300 text-sm">
+                  • {stats.totalContacts} contacts • {stats.activeCampaigns} active campaigns • {stats.messagesToday} messages today
                 </span>
               </div>
             </CardContent>
@@ -212,13 +217,19 @@ export default async function Dashboard() {
           {dashboardStats.map((stat, index) => {
             const Icon = stat.icon
             return (
-              <Card key={index} className="bg-white">
+              <Card key={index} className="bg-white dark:bg-gray-900">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-gray-600">{stat.title}</p>
-                      <p className="text-2xl font-bold text-gray-900">{stat.value}</p>
-                      <p className={`text-sm ${stat.color} font-medium`}>{stat.change}</p>
+                      <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                        {stat.title}
+                      </p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                        {stat.value}
+                      </p>
+                      <p className={`text-sm ${stat.color} font-medium`}>
+                        {stat.change}
+                      </p>
                     </div>
                     <Icon className={`h-8 w-8 ${stat.color}`} />
                   </div>
@@ -230,7 +241,9 @@ export default async function Dashboard() {
 
         {/* Quick Actions */}
         <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Quick Actions</h2>
+          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">
+            Quick Actions
+          </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {quickActions.map((action, index) => {
               const Icon = action.icon
@@ -238,9 +251,13 @@ export default async function Dashboard() {
                 <Link key={index} href={action.href}>
                   <Card className={`cursor-pointer transition-colors ${action.color}`}>
                     <CardContent className="p-6 text-center">
-                      <Icon className="h-8 w-8 mx-auto mb-3 text-gray-700" />
-                      <h3 className="font-semibold text-gray-900 mb-1">{action.title}</h3>
-                      <p className="text-sm text-gray-600">{action.description}</p>
+                      <Icon className="h-8 w-8 mx-auto mb-3 text-gray-700 dark:text-gray-300" />
+                      <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">
+                        {action.title}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {action.description}
+                      </p>
                     </CardContent>
                   </Card>
                 </Link>
@@ -251,10 +268,12 @@ export default async function Dashboard() {
 
         {/* Recent Activity */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="bg-white">
+          <Card className="bg-white dark:bg-gray-900">
             <CardHeader>
-              <CardTitle>Recent Campaigns</CardTitle>
-              <CardDescription>Your latest drip campaigns</CardDescription>
+              <CardTitle className="dark:text-gray-100">Recent Campaigns</CardTitle>
+              <CardDescription className="dark:text-gray-400">
+                Your latest drip campaigns
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
@@ -262,33 +281,41 @@ export default async function Dashboard() {
                   stats.recentCampaigns.map((campaign: any, index: number) => (
                     <div
                       key={campaign.id || index}
-                      className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                      className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-800 rounded-lg"
                     >
                       <div>
-                        <p className="font-medium text-gray-900">{campaign.name}</p>
-                        <p className="text-sm text-gray-600">{campaign.total_contacts} contacts</p>
+                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                          {campaign.name}
+                        </p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                          {campaign.total_contacts} contacts
+                        </p>
                       </div>
                       <div className="text-right">
                         <span
                           className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
                             campaign.status === "Active"
-                              ? "bg-green-100 text-green-800"
+                              ? "bg-green-100 text-green-800 dark:bg-green-800 dark:text-green-200"
                               : campaign.status === "Paused"
-                                ? "bg-yellow-100 text-yellow-800"
-                                : "bg-gray-100 text-gray-800"
+                              ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-800 dark:text-yellow-200"
+                              : "bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200"
                           }`}
                         >
                           {campaign.status}
                         </span>
-                        <p className="text-sm text-gray-600 mt-1">{campaign.messages_sent} sent</p>
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          {campaign.messages_sent} sent
+                        </p>
                       </div>
                     </div>
                   ))
                 ) : (
                   <div className="text-center py-4">
-                    <p className="text-gray-500 text-sm">No campaigns yet</p>
+                    <p className="text-gray-500 dark:text-gray-400 text-sm">No campaigns yet</p>
                     <Link href="/campaigns">
-                      <Button className="mt-2 bg-black text-white hover:bg-gray-800">Create Your First Campaign</Button>
+                      <Button className="mt-2 bg-black text-white hover:bg-gray-800">
+                        Create Your First Campaign
+                      </Button>
                     </Link>
                   </div>
                 )}
@@ -296,24 +323,32 @@ export default async function Dashboard() {
             </CardContent>
           </Card>
 
-          <Card className="bg-white">
+          <Card className="bg-white dark:bg-gray-900">
             <CardHeader>
-              <CardTitle>Message Performance</CardTitle>
-              <CardDescription>Today's messaging statistics</CardDescription>
+              <CardTitle className="dark:text-gray-100">Message Performance</CardTitle>
+              <CardDescription className="dark:text-gray-400">
+                Today's messaging statistics
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Messages Sent</span>
-                  <span className="font-semibold">{stats.messagesToday.toLocaleString()}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Messages Sent</span>
+                  <span className="font-semibold text-gray-900 dark:text-gray-100">
+                    {stats.messagesToday.toLocaleString()}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">Response Rate</span>
-                  <span className="font-semibold text-purple-600">{stats.responseRate}</span>
+                  <span className="text-gray-600 dark:text-gray-400">Response Rate</span>
+                  <span className="font-semibold text-purple-600 dark:text-purple-300">
+                    {stats.responseRate}
+                  </span>
                 </div>
                 <div className="pt-4">
                   <Link href="/messages">
-                    <Button className="w-full bg-black text-white hover:bg-gray-800">View Detailed Analytics</Button>
+                    <Button className="w-full bg-black text-white hover:bg-gray-800">
+                      View Detailed Analytics
+                    </Button>
                   </Link>
                 </div>
               </div>
