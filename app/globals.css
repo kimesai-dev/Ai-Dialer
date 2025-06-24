@@ -1,3 +1,25 @@
+/* globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Global dark-mode text override */
+@layer base {
+  /* Ensure the <body> background & default text color flip */
+  html {
+    @apply bg-white text-gray-900 dark:bg-gray-900 dark:text-gray-100;
+  }
+
+  /* Make all headings, paragraphs, list items, spans readable in dark mode */
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6,
+  p,
+  li,
+  span {
+    @apply dark:text-gray-100;
+  }
+}
