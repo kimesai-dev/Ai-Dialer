@@ -91,6 +91,9 @@ body {
   body {
     @apply bg-background text-foreground;
   }
+}
+
+@layer utilities {
   .dark .bg-white {
     @apply bg-card;
   }
