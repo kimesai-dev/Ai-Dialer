@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Badge } from "@/components/ui/badge"
 import { Upload, Search, Filter, Download, Plus, Phone, Mail, MapPin, Users } from "lucide-react"
+import { toast } from "@/hooks/use-toast"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import ContactDetailModal from "./contact-detail-modal"
 
@@ -40,6 +41,8 @@ export default function ContactsClient() {
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false)
   const [loading, setLoading] = useState(true)
   const [isDemo, setIsDemo] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const contactsPerPage = 10
 
   // Fetch contacts from API on component mount
   useEffect(() => {
@@ -67,6 +70,7 @@ export default function ContactsClient() {
     }
 
     setFilteredContacts(filtered)
+    setCurrentPage(1)
   }, [contacts, searchTerm, statusFilter])
 
   // Fetch contacts from API
@@ -132,7 +136,10 @@ export default function ContactsClient() {
 
   const handleFileUpload = async (file: File) => {
     if (!file.name.endsWith(".csv")) {
-      alert("Please upload a CSV file")
+      toast({
+        title: "Invalid file",
+        description: "Please upload a CSV file",
+      })
       return
     }
 
@@ -149,13 +156,13 @@ export default function ContactsClient() {
       const result = await response.json()
 
       if (result.error) {
-        alert(`Error: ${result.error}`)
+        toast({ title: "Upload failed", description: String(result.error) })
       } else {
-        alert(result.message)
+        toast({ title: "Contacts uploaded" })
         await fetchContacts() // Refresh the contacts list
       }
     } catch (error) {
-      alert("Error uploading file")
+      toast({ title: "Error uploading file" })
     } finally {
       setUploading(false)
     }
@@ -216,6 +223,10 @@ Robert Brown,+1 (555) 654-3210,robert.brown@email.com,"654 Maple Lane, Unit 5",P
     link.click()
     document.body.removeChild(link)
   }
+
+  const indexOfLast = currentPage * contactsPerPage
+  const indexOfFirst = indexOfLast - contactsPerPage
+  const paginatedContacts = filteredContacts.slice(indexOfFirst, indexOfLast)
 
   if (loading) {
     return (
@@ -306,6 +317,31 @@ Robert Brown,+1 (555) 654-3210,robert.brown@email.com,"654 Maple Lane, Unit 5",P
           </CardContent>
         </Card>
 
+        {filteredContacts.length > contactsPerPage && (
+          <div className="flex justify-between items-center mt-4">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage === 1}
+              onClick={() => setCurrentPage((p) => p - 1)}
+            >
+              Previous
+            </Button>
+            <span className="text-sm text-gray-600">
+              Page {currentPage} of {Math.ceil(filteredContacts.length / contactsPerPage)}
+            </span>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={currentPage >= Math.ceil(filteredContacts.length / contactsPerPage)}
+              onClick={() => setCurrentPage((p) => p + 1)}
+            >
+              Next
+            </Button>
+          </div>
+        )}
+
+
         {/* Search and Filters */}
         <Card className="mb-6 bg-white">
           <CardContent className="p-6">
@@ -361,7 +397,7 @@ Robert Brown,+1 (555) 654-3210,robert.brown@email.com,"654 Maple Lane, Unit 5",P
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredContacts.map((contact) => (
+                {paginatedContacts.map((contact) => (
                   <div
                     key={contact.id}
                     className="flex flex-col lg:flex-row lg:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
