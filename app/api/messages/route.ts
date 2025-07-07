@@ -1,143 +1,83 @@
-import { type NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+"use client"
 
-export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url)
-    const status = searchParams.get("status")
-    const campaign = searchParams.get("campaign")
-    const limit = Number.parseInt(searchParams.get("limit") || "50")
-    const offset = Number.parseInt(searchParams.get("offset") || "0")
+import { useEffect, useState } from "react"
+import MessagesClient from "@/components/messages-client"
 
-    let query = supabase
-      .from("messages")
-      .select(`
-        *,
-        contact:contacts(*),
-        campaign:campaigns(*)
-      `)
-      .order("sent_at", { ascending: false }) // ✅ Changed from created_at
-      .range(offset, offset + limit - 1)
-
-    if (status && status !== "all") {
-      query = query.eq("status", status)
-    }
-
-    if (campaign && campaign !== "all") {
-      query = query.eq("campaign_id", campaign)
-    }
-
-    const { data, error } = await query
-
-    if (error) {
-      return NextResponse.json({ error: error.message }, { status: 500 })
-    }
-
-    return NextResponse.json({ data })
-  } catch (error) {
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
-  }
+interface Message {
+  id: string
+  content: string
+  recipients: number
+  sent: string
+  status: string
+  responses: number
+  campaign: string
 }
 
-export async function POST(request: NextRequest) {
-  try {
+const mockMessages: Message[] = [
+  {
+    id: "1",
+    content: "Hi John, we have a special offer for you this week.",
+    recipients: 150,
+    sent: "2024-12-06 10:30 AM",
+    status: "Delivered",
+    responses: 12,
+    campaign: "Holiday Promotion",
+  },
+]
+
+export default function MessagesPage() {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isDemo, setIsDemo] = useState(false)
+
+  const fetchMessages = async () => {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const isDemoMode = !(supabaseUrl && supabaseAnonKey)
 
-    if (!supabaseUrl || !supabaseAnonKey) {
-      return NextResponse.json({ error: "Supabase not configured" }, { status: 501 })
+    if (isDemoMode) {
+      setMessages(mockMessages)
+      setIsDemo(true)
+      return
     }
 
-    const { supabase } = await import("@/lib/supabase")
-    const { sendSMS } = await import("@/lib/twilio")
+    try {
+      const res = await fetch("/api/messages")
+      const json = await res.json()
 
-    const body = await request.json()
-    const { contact_ids, content, campaign_id } = body
+      console.log("📦 Raw API response:", json.data)
 
-    if (!contact_ids || !Array.isArray(contact_ids) || contact_ids.length === 0) {
-      return NextResponse.json({ error: "No contacts specified" }, { status: 400 })
-    }
-
-    if (!content || content.trim().length === 0) {
-      return NextResponse.json({ error: "Message content is required" }, { status: 400 })
-    }
-
-    const { data: contacts, error: contactError } = await supabase
-      .from("contacts")
-      .select("id, name, phone")
-      .in("id", contact_ids)
-
-    if (contactError) {
-      return NextResponse.json({ error: contactError.message }, { status: 500 })
-    }
-
-    if (!contacts || contacts.length === 0) {
-      return NextResponse.json({ error: "No valid contacts found" }, { status: 400 })
-    }
-
-    const results = []
-    const messageRecords = []
-
-    for (const contact of contacts) {
-      const personalizedMessage = content.replace(/\{\{name\}\}/g, contact.name)
-
-      const smsResult = await sendSMS({
-        to: contact.phone,
-        message: personalizedMessage,
-        contactId: contact.id,
-        campaignId: campaign_id,
-      })
-
-      const messageRecord = {
-        contact_id: contact.id,
-        campaign_id: campaign_id,
-        content: personalizedMessage,
-        status: smsResult.success ? "Sent" : "Failed",
-        sent_at: new Date().toISOString(),
-        twilio_message_id: smsResult.messageId,
-        error_message: smsResult.error,
+      if (!json.data) {
+        setMessages(mockMessages)
+        setIsDemo(true)
+        return
       }
 
-      messageRecords.push(messageRecord)
-      results.push({
-        contact_id: contact.id,
-        contact_name: contact.name,
-        phone: contact.phone,
-        success: smsResult.success,
-        message_id: smsResult.messageId,
-        error: smsResult.error,
-      })
+      const formatted = json.data.map((msg: any) => ({
+        id: msg.id,
+        content: msg.content,
+        recipients: msg.direction === "inbound" ? 0 : 1,
+        sent: new Date(msg.sent_at || msg.created_at).toLocaleString(),
+        status: msg.direction === "inbound" ? "Received" : msg.status || "Unknown",
+        responses: msg.response_received ? 1 : 0,
+        campaign:
+          msg.campaign?.name ||
+          (msg.direction === "inbound" ? "Inbound Reply" : "Direct Message"),
+      }))
+
+      setMessages(formatted)
+      setIsDemo(false)
+    } catch (err) {
+      console.error("❌ Error fetching live messages:", err)
+      setMessages(mockMessages)
+      setIsDemo(true)
     }
-
-    const { data: savedMessages, error: saveError } = await supabase
-      .from("messages")
-      .insert(messageRecords)
-      .select()
-
-    if (saveError) {
-      console.error("Error saving messages to database:", saveError)
-    }
-
-    const successfulContactIds = results.filter((r) => r.success).map((r) => r.contact_id)
-
-    if (successfulContactIds.length > 0) {
-      await supabase
-        .from("contacts")
-        .update({ last_contacted: new Date().toISOString() })
-        .in("id", successfulContactIds)
-    }
-
-    const successCount = results.filter((r) => r.success).length
-    const failureCount = results.filter((r) => !r.success).length
-
-    return NextResponse.json({
-      success: true,
-      message: `Sent ${successCount} messages successfully${failureCount > 0 ? `, ${failureCount} failed` : ""}`,
-      results,
-      data: savedMessages,
-    })
-  } catch (error) {
-    console.error("Error in messages API:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
+
+  useEffect(() => {
+    fetchMessages()
+    const interval = setInterval(fetchMessages, 5000)
+    return () => clearInterval(interval)
+  }, [])
+
+  return <MessagesClient initialMessages={messages} isDemo={isDemo} />
 }
