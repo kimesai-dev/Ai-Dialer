@@ -1,3 +1,4 @@
+// paste starts here
 "use client"
 
 import { useState, useEffect, useRef } from "react"
@@ -59,11 +60,10 @@ export default function ConversationsClient() {
 
       const response = await fetch(`/api/conversations?${params}`)
       const result = await response.json()
+
       if (result.data) {
         setContacts(result.data)
-        if (!selectedContact && result.data.length > 0) {
-          setSelectedContact(result.data[0])
-        }
+        setSelectedContact((prev) => prev || result.data[0] || null)
       }
     } catch (error) {
       console.error("Error fetching conversations:", error)
@@ -140,14 +140,10 @@ export default function ConversationsClient() {
 
   const getStatusColor = (status: string | undefined) => {
     switch (status) {
-      case "Lead":
-        return "bg-blue-100 text-blue-800"
-      case "Customer":
-        return "bg-green-100 text-green-800"
-      case "Prospect":
-        return "bg-yellow-100 text-yellow-800"
-      default:
-        return "bg-gray-100 text-gray-800"
+      case "Lead": return "bg-blue-100 text-blue-800"
+      case "Customer": return "bg-green-100 text-green-800"
+      case "Prospect": return "bg-yellow-100 text-yellow-800"
+      default: return "bg-gray-100 text-gray-800"
     }
   }
 
@@ -203,10 +199,165 @@ export default function ConversationsClient() {
     }
   }, [selectedContact])
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen text-gray-500">
+        Loading conversations...
+      </div>
+    )
+  }
+
   return (
-    // your existing UI code goes here (sidebar, chat thread, sidebar details)
-    // just make sure anywhere you render tags or status uses fallbacks like:
-    // selectedContact?.status || "Lead" and (selectedContact?.tags || []).map(...)
-    <></>
+    <div className="h-screen flex bg-gray-50">
+      {/* Sidebar */}
+      <div className="w-80 bg-white border-r border-gray-200">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+          <h1 className="text-xl font-semibold">Conversations</h1>
+          <Button size="sm" variant="ghost" onClick={fetchConversations} disabled={refreshing}>
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4">
+          <TabsList className="grid grid-cols-4 mb-2">
+            <TabsTrigger value="unread" className="text-xs">Unread</TabsTrigger>
+            <TabsTrigger value="recents" className="text-xs">Recents</TabsTrigger>
+            <TabsTrigger value="starred" className="text-xs">Starred</TabsTrigger>
+            <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="px-4 pb-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
+            <Input
+              className="pl-10"
+              placeholder="Search"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="overflow-y-auto flex-1 px-2">
+          {contacts.length === 0 ? (
+            <p className="text-center text-sm text-gray-400 mt-10">No conversations found</p>
+          ) : (
+            contacts.map((contact) => (
+              <div
+                key={contact.id}
+                className={`p-3 rounded-lg cursor-pointer hover:bg-gray-100 ${
+                  selectedContact?.id === contact.id ? "bg-purple-50 border border-purple-300" : ""
+                }`}
+                onClick={() => setSelectedContact(contact)}
+              >
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>{getInitials(contact.name || "")}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{contact.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{contact.lastMessage || "No messages yet"}</p>
+                  </div>
+                  {contact.unreadCount && contact.unreadCount > 0 && (
+                    <Badge className="bg-purple-600 text-white text-xs h-5 w-5 flex items-center justify-center rounded-full">
+                      {contact.unreadCount}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Main Chat */}
+      <div className="flex-1 flex flex-col">
+        {selectedContact ? (
+          <>
+            <div className="p-4 border-b border-gray-200 flex items-center justify-between bg-white">
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback>{getInitials(selectedContact.name || "")}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium text-gray-900">{selectedContact.name}</p>
+                  <p className="text-sm text-gray-500">{selectedContact.phone}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              {messages.length === 0 ? (
+                <p className="text-center text-sm text-gray-400">No messages yet</p>
+              ) : (
+                messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.type === "sent" ? "justify-end" : "justify-start"}`}
+                  >
+                    <div
+                      className={`px-4 py-2 rounded-lg max-w-xs ${
+                        message.type === "sent" ? "bg-purple-600 text-white" : "bg-gray-200 text-gray-900"
+                      }`}
+                    >
+                      <p className="text-sm">{message.content}</p>
+                      <p className="text-xs mt-1 text-right opacity-70">{message.timestamp}</p>
+                    </div>
+                  </div>
+                ))
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="p-4 border-t border-gray-200 bg-white">
+              <div className="flex items-center space-x-2">
+                <Input
+                  value={messageInput}
+                  onChange={(e) => setMessageInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                  placeholder="Type a message"
+                />
+                <Button onClick={handleSendMessage}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-400">
+            Select a contact to start chatting
+          </div>
+        )}
+      </div>
+
+      {/* Contact Sidebar */}
+      {selectedContact && (
+        <div className="w-80 border-l border-gray-200 bg-white p-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-gray-900">{selectedContact.name}</h3>
+            <Button variant="ghost" size="sm">
+              <MoreVertical className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="space-y-2 text-sm text-gray-600">
+            <p><Mail className="inline h-4 w-4 mr-2" /> {selectedContact.email || "Not provided"}</p>
+            <p><Phone className="inline h-4 w-4 mr-2" /> {selectedContact.phone}</p>
+            <p><span className="font-semibold">Location:</span> {selectedContact.location || "N/A"}</p>
+            <p>
+              <span className="font-semibold">Status:</span>{" "}
+              <Badge className={getStatusColor(selectedContact.status)}>{selectedContact.status || "Unknown"}</Badge>
+            </p>
+            <div>
+              <span className="font-semibold">Tags:</span>
+              <div className="flex flex-wrap gap-1 mt-1">
+                {(selectedContact.tags || []).map((tag, i) => (
+                  <Badge key={i} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
   )
 }
