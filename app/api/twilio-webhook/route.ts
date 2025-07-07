@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { supabase } from "@/lib/supabase"
+import { supabaseServer } from "@/lib/supabase-server"
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,7 +18,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Missing From or Body" }, { status: 400 })
     }
 
-    const { data: contact, error: contactError } = await supabase
+    const { data: contact, error: contactError } = await supabaseServer
       .from("contacts")
       .select("id")
       .ilike("phone", `%${from.slice(-10)}`)
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
       console.error("❌ Supabase contact query error:", contactError)
     }
 
-    const { error: insertError } = await supabase.from("messages").insert({
+    const { error: insertError } = await supabaseServer.from("messages").insert({
       contact_id: contact?.id || null,
       content: body,
       direction: "inbound",
