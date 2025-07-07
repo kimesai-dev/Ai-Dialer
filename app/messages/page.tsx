@@ -41,7 +41,7 @@ export default function MessagesPage() {
     }
 
     try {
-      const res = await fetch("/api/messages")
+      const res = await fetch("/api/messages?status=all&campaign=all")
       const json = await res.json()
 
       if (!json.data) {
@@ -50,15 +50,19 @@ export default function MessagesPage() {
         return
       }
 
-      const formatted = json.data.map((msg: any) => ({
-        id: msg.id,
-        content: msg.content,
-        recipients: 1,
-        sent: new Date(msg.sent_at || msg.created_at).toLocaleString(),
-        status: msg.status,
-        responses: msg.response_received ? 1 : 0,
-        campaign: msg.campaign?.name || "Direct Message",
-      }))
+      const formatted = json.data.map((msg: any) => {
+        const isInbound = msg.direction === "inbound" || !msg.campaign_id
+
+        return {
+          id: msg.id,
+          content: msg.content,
+          recipients: isInbound ? 0 : 1,
+          sent: new Date(msg.sent_at || msg.created_at).toLocaleString(),
+          status: msg.status || (isInbound ? "Received" : "Sent"),
+          responses: 0,
+          campaign: msg.campaign?.name || (isInbound ? "Inbound Message" : "Direct Message"),
+        }
+      })
 
       setMessages(formatted)
       setIsDemo(false)
@@ -71,7 +75,7 @@ export default function MessagesPage() {
 
   useEffect(() => {
     fetchMessages()
-    const interval = setInterval(fetchMessages, 5000) // fetch every 5 seconds
+    const interval = setInterval(fetchMessages, 5000)
     return () => clearInterval(interval)
   }, [])
 
