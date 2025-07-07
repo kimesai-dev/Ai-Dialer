@@ -1,4 +1,6 @@
-import { supabase } from "@/lib/supabase"
+"use client"
+
+import { useEffect, useState } from "react"
 import MessagesClient from "@/components/messages-client"
 
 interface Message {
@@ -11,7 +13,6 @@ interface Message {
   campaign: string
 }
 
-// Mock data fallback
 const mockMessages: Message[] = [
   {
     id: "1",
@@ -24,51 +25,55 @@ const mockMessages: Message[] = [
   },
 ]
 
-async function getMessagesData() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  const isDemo = !(supabaseUrl && supabaseAnonKey)
+export default function MessagesPage() {
+  const [messages, setMessages] = useState<Message[]>([])
+  const [isDemo, setIsDemo] = useState(false)
 
-  if (isDemo) {
-    return { messages: mockMessages, isDemo: true }
-  }
+  const fetchMessages = async () => {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    const isDemoMode = !(supabaseUrl && supabaseAnonKey)
 
-  try {
-    const { data: messagesData, error } = await supabase
-      .from("messages")
-      .select(`
-        *,
-        contact:contacts(*),
-        campaign:campaigns(*)
-      `)
-      .order("created_at", { ascending: false })
-      .limit(20)
-
-    if (error) {
-      console.error("Error fetching messages:", error)
-      return { messages: mockMessages, isDemo: true }
+    if (isDemoMode) {
+      setMessages(mockMessages)
+      setIsDemo(true)
+      return
     }
 
-    // Transform the data to match the expected format
-    const messages =
-      messagesData?.map((msg) => ({
+    try {
+      const res = await fetch("/api/messages")
+      const json = await res.json()
+
+      if (!json.data) {
+        setMessages(mockMessages)
+        setIsDemo(true)
+        return
+      }
+
+      const formatted = json.data.map((msg: any) => ({
         id: msg.id,
         content: msg.content,
-        recipients: 1, // Individual message
+        recipients: 1,
         sent: new Date(msg.sent_at || msg.created_at).toLocaleString(),
         status: msg.status,
         responses: msg.response_received ? 1 : 0,
         campaign: msg.campaign?.name || "Direct Message",
-      })) || []
+      }))
 
-    return { messages, isDemo: false }
-  } catch (error) {
-    console.error("Error connecting to Supabase:", error)
-    return { messages: mockMessages, isDemo: true }
+      setMessages(formatted)
+      setIsDemo(false)
+    } catch (err) {
+      console.error("❌ Error fetching live messages:", err)
+      setMessages(mockMessages)
+      setIsDemo(true)
+    }
   }
-}
 
-export default async function MessagesPage() {
-  const { messages, isDemo } = await getMessagesData()
+  useEffect(() => {
+    fetchMessages()
+    const interval = setInterval(fetchMessages, 5000) // fetch every 5 seconds
+    return () => clearInterval(interval)
+  }, [])
+
   return <MessagesClient initialMessages={messages} isDemo={isDemo} />
 }
