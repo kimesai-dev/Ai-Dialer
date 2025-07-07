@@ -66,10 +66,15 @@ export default function ConversationsClient() {
 
       const response = await fetch(`/api/conversations?${params}`)
       const result = await response.json()
-      if (result.data) {
+
+      if (result.data && result.data.length > 0) {
         setContacts(result.data)
-        setSelectedContact((prev) => prev || result.data[0] || null)
+        setSelectedContact((prev) => prev || result.data[0])
+      } else {
+        setContacts([])
+        setSelectedContact(null)
       }
+
     } catch (error) {
       console.error("Error fetching conversations:", error)
     } finally {
@@ -152,18 +157,24 @@ export default function ConversationsClient() {
     }
   }
 
+  // Initial load
   useEffect(() => {
     fetchConversations()
   }, [searchTerm, activeTab])
 
+  // Load messages for selected contact
   useEffect(() => {
-    if (selectedContact) fetchMessages(selectedContact.id)
+    if (selectedContact) {
+      fetchMessages(selectedContact.id)
+    }
   }, [selectedContact])
 
+  // Scroll down when messages change
   useEffect(() => {
     scrollToBottom()
   }, [messages])
 
+  // Poll for updates every 30s
   useEffect(() => {
     const interval = setInterval(() => {
       fetchConversations()
@@ -181,10 +192,121 @@ export default function ConversationsClient() {
   }
 
   return (
-    <div className="h-screen flex bg-gray-50">
-      {/* ... UI content remains unchanged ... */}
-      {/* Sidebar, Chat window, Message input, and Contact sidebar here */}
-      {/* You already have this from your previous version — only the Realtime hook is gone */}
+    <div className="h-screen flex">
+      {/* Sidebar */}
+      <div className="w-80 border-r border-gray-200 bg-white flex flex-col">
+        <div className="p-4 border-b flex items-center justify-between">
+          <h2 className="text-lg font-semibold">Conversations</h2>
+          <Button variant="ghost" size="sm" onClick={fetchConversations}>
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="px-4">
+          <TabsList className="grid grid-cols-4 mb-2">
+            <TabsTrigger value="unread">Unread</TabsTrigger>
+            <TabsTrigger value="recents">Recents</TabsTrigger>
+            <TabsTrigger value="starred">Starred</TabsTrigger>
+            <TabsTrigger value="all">All</TabsTrigger>
+          </TabsList>
+        </Tabs>
+        <div className="px-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+            <Input
+              placeholder="Search"
+              className="pl-10"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex-1 overflow-y-auto p-2">
+          {contacts.length === 0 ? (
+            <div className="text-center text-sm text-gray-500 mt-10">No conversations found</div>
+          ) : (
+            contacts.map((contact) => (
+              <div
+                key={contact.id}
+                className={`p-3 rounded-lg cursor-pointer hover:bg-gray-100 ${
+                  selectedContact?.id === contact.id ? "bg-purple-100 border border-purple-300" : ""
+                }`}
+                onClick={() => setSelectedContact(contact)}
+              >
+                <div className="flex items-center space-x-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>{getInitials(contact.name || "")}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{contact.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{contact.lastMessage || "No messages yet"}</p>
+                  </div>
+                  {contact.unreadCount && contact.unreadCount > 0 && (
+                    <Badge className="bg-purple-600 text-white text-xs h-5 w-5 flex items-center justify-center rounded-full">
+                      {contact.unreadCount}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* Chat + Contact Info */}
+      <div className="flex-1 flex flex-col">
+        {selectedContact ? (
+          <>
+            <div className="p-4 border-b flex justify-between items-center">
+              <div className="flex items-center space-x-3">
+                <Avatar className="h-10 w-10">
+                  <AvatarFallback>{getInitials(selectedContact.name || "")}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium text-gray-900">{selectedContact.name}</p>
+                  <p className="text-sm text-gray-500">{selectedContact.phone}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-gray-50">
+              {messages.map((msg) => (
+                <div
+                  key={msg.id}
+                  className={`flex ${msg.type === "sent" ? "justify-end" : "justify-start"}`}
+                >
+                  <div
+                    className={`max-w-xs px-4 py-2 rounded-lg ${
+                      msg.type === "sent"
+                        ? "bg-purple-600 text-white"
+                        : "bg-gray-200 text-gray-900"
+                    }`}
+                  >
+                    <p className="text-sm">{msg.content}</p>
+                    <p className="text-xs text-right mt-1 opacity-70">{msg.timestamp}</p>
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            <div className="p-4 border-t flex items-center gap-2 bg-white">
+              <Input
+                value={messageInput}
+                onChange={(e) => setMessageInput(e.target.value)}
+                onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
+                placeholder="Type a message"
+              />
+              <Button onClick={handleSendMessage}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center text-gray-400">
+            Select a contact to start messaging
+          </div>
+        )}
+      </div>
     </div>
   )
 }
