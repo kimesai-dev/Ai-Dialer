@@ -1,14 +1,16 @@
-import { type NextRequest, NextResponse } from "next/server"
+import type { NextApiRequest, NextApiResponse } from "next"
 
-export async function POST(request: NextRequest) {
-  console.log("🚀 verify-hook route hit")
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" })
+  }
 
-  const formData = await request.formData()
+  const from = req.body.From || "Unknown"
+  const to = req.body.To || "Unknown"
+  const body = req.body.Body || ""
 
-  const from = formData.get("From") as string
-  const body = formData.get("Body") as string
+  console.log("🚀 verify-hook hit")
+  console.log("📨 Incoming message:", { from, to, body })
 
-  console.log("📨 Message:", { from, body })
-
-  return NextResponse.json({ success: true })
+  return res.status(200).json({ success: true })
 }
