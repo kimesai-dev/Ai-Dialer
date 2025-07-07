@@ -1,14 +1,15 @@
 "use client"
 
 import { useState, useEffect, useRef } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback } from "@/components/ui/avatar"
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Search, Send, Phone, Mail, Star, MoreVertical, Paperclip, Smile, DollarSign, RefreshCw } from "lucide-react"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { createClient } from "@supabase/supabase-js"
+import {
+  Button, Input, Badge, Avatar, AvatarFallback,
+  Tabs, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue
+} from "@/components/ui"
+import {
+  Search, Send, Phone, Mail, Star, MoreVertical,
+  Paperclip, Smile, DollarSign, RefreshCw
+} from "lucide-react"
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -21,8 +22,8 @@ interface Contact {
   phone: string
   email?: string
   location?: string
-  status: string
-  tags: string[]
+  status?: string
+  tags?: string[]
   avatar?: string
   lastMessage?: string
   lastMessageTime?: string
@@ -58,7 +59,6 @@ export default function ConversationsClient() {
 
       const response = await fetch(`/api/conversations?${params}`)
       const result = await response.json()
-
       if (result.data) {
         setContacts(result.data)
         if (!selectedContact && result.data.length > 0) {
@@ -82,62 +82,6 @@ export default function ConversationsClient() {
       console.error("Error fetching messages:", error)
     }
   }
-
-  useEffect(() => {
-    fetchConversations()
-  }, [searchTerm, activeTab])
-
-  useEffect(() => {
-    if (selectedContact) fetchMessages(selectedContact.id)
-  }, [selectedContact])
-
-  useEffect(() => {
-    scrollToBottom()
-  }, [messages])
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      fetchConversations()
-      if (selectedContact) fetchMessages(selectedContact.id)
-    }, 30000)
-    return () => clearInterval(interval)
-  }, [selectedContact])
-
-  useEffect(() => {
-    const channel = supabase
-      .channel("messages-realtime")
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "messages",
-        },
-        (payload) => {
-          const msg = payload.new
-          if (msg.contact_id === selectedContact?.id) {
-            const newMsg = {
-              id: msg.id,
-              contactId: msg.contact_id,
-              content: msg.content,
-              type: msg.direction === "inbound" ? "received" : "sent",
-              timestamp: new Date(msg.sent_at || msg.created_at).toLocaleTimeString([], {
-                hour: "2-digit",
-                minute: "2-digit",
-              }),
-              status: msg.status || "sent",
-            }
-            setMessages((prev) => [...prev, newMsg])
-          }
-          fetchConversations()
-        }
-      )
-      .subscribe()
-
-    return () => {
-      supabase.removeChannel(channel)
-    }
-  }, [selectedContact])
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -170,14 +114,20 @@ export default function ConversationsClient() {
       })
 
       if (response.ok) {
-        setMessages((prev) => prev.map((msg) => (msg.id === newMessage.id ? { ...msg, status: "sent" } : msg)))
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === newMessage.id ? { ...msg, status: "sent" } : msg))
+        )
         fetchConversations()
       } else {
-        setMessages((prev) => prev.map((msg) => (msg.id === newMessage.id ? { ...msg, status: "failed" } : msg)))
+        setMessages((prev) =>
+          prev.map((msg) => (msg.id === newMessage.id ? { ...msg, status: "failed" } : msg))
+        )
       }
     } catch (error) {
       console.error("Failed to send message:", error)
-      setMessages((prev) => prev.map((msg) => (msg.id === newMessage.id ? { ...msg, status: "failed" } : msg)))
+      setMessages((prev) =>
+        prev.map((msg) => (msg.id === newMessage.id ? { ...msg, status: "failed" } : msg))
+      )
     }
   }
 
@@ -188,17 +138,75 @@ export default function ConversationsClient() {
       .join("")
       .toUpperCase()
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: string | undefined) => {
     switch (status) {
-      case "Lead": return "bg-blue-100 text-blue-800"
-      case "Customer": return "bg-green-100 text-green-800"
-      case "Prospect": return "bg-yellow-100 text-yellow-800"
-      default: return "bg-gray-100 text-gray-800"
+      case "Lead":
+        return "bg-blue-100 text-blue-800"
+      case "Customer":
+        return "bg-green-100 text-green-800"
+      case "Prospect":
+        return "bg-yellow-100 text-yellow-800"
+      default:
+        return "bg-gray-100 text-gray-800"
     }
   }
 
-  // ... UI stays unchanged from your original code (left pane, chat thread, right sidebar)
-  // Your current UI section is excellent and doesn’t need changes for real-time to work.
+  useEffect(() => {
+    fetchConversations()
+  }, [searchTerm, activeTab])
 
-  // Just paste this file in full to replace your current version.
+  useEffect(() => {
+    if (selectedContact) fetchMessages(selectedContact.id)
+  }, [selectedContact])
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchConversations()
+      if (selectedContact) fetchMessages(selectedContact.id)
+    }, 30000)
+    return () => clearInterval(interval)
+  }, [selectedContact])
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("messages-realtime")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages" },
+        (payload) => {
+          const msg = payload.new
+          if (msg.contact_id === selectedContact?.id) {
+            const newMsg: Message = {
+              id: msg.id,
+              contactId: msg.contact_id,
+              content: msg.content,
+              type: msg.direction === "inbound" ? "received" : "sent",
+              timestamp: new Date(msg.sent_at || msg.created_at).toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              status: msg.status || "sent",
+            }
+            setMessages((prev) => [...prev, newMsg])
+          }
+          fetchConversations()
+        }
+      )
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [selectedContact])
+
+  return (
+    // your existing UI code goes here (sidebar, chat thread, sidebar details)
+    // just make sure anywhere you render tags or status uses fallbacks like:
+    // selectedContact?.status || "Lead" and (selectedContact?.tags || []).map(...)
+    <></>
+  )
 }
