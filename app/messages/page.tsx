@@ -51,7 +51,7 @@ export default function MessagesPage() {
       }
 
       const formatted = json.data.map((msg: any) => {
-        const isInbound = msg.direction === "inbound" || !msg.campaign_id
+        const isInbound = msg.direction === "inbound"
 
         return {
           id: msg.id,
@@ -59,7 +59,7 @@ export default function MessagesPage() {
           recipients: isInbound ? 0 : 1,
           sent: new Date(msg.sent_at || msg.created_at).toLocaleString(),
           status: msg.status || (isInbound ? "Received" : "Sent"),
-          responses: 0,
+          responses: 0, // Can enhance later
           campaign: msg.campaign?.name || (isInbound ? "Inbound Message" : "Direct Message"),
         }
       })
