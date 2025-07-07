@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
         contact:contacts(*),
         campaign:campaigns(*)
       `)
-      .order("created_at", { ascending: false })
+      .order("sent_at", { ascending: false }) // ✅ Changed from created_at
       .range(offset, offset + limit - 1)
 
     if (status && status !== "all") {
@@ -41,7 +41,6 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if Supabase is configured
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -63,7 +62,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Message content is required" }, { status: 400 })
     }
 
-    // Get contact details for the specified IDs
     const { data: contacts, error: contactError } = await supabase
       .from("contacts")
       .select("id, name, phone")
@@ -80,12 +78,9 @@ export async function POST(request: NextRequest) {
     const results = []
     const messageRecords = []
 
-    // Send SMS to each contact
     for (const contact of contacts) {
-      // Personalize message by replacing {{name}} placeholder
       const personalizedMessage = content.replace(/\{\{name\}\}/g, contact.name)
 
-      // Send via Twilio
       const smsResult = await sendSMS({
         to: contact.phone,
         message: personalizedMessage,
@@ -93,7 +88,6 @@ export async function POST(request: NextRequest) {
         campaignId: campaign_id,
       })
 
-      // Create message record in database
       const messageRecord = {
         contact_id: contact.id,
         campaign_id: campaign_id,
@@ -115,15 +109,15 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    // Save all message records to database
-    const { data: savedMessages, error: saveError } = await supabase.from("messages").insert(messageRecords).select()
+    const { data: savedMessages, error: saveError } = await supabase
+      .from("messages")
+      .insert(messageRecords)
+      .select()
 
     if (saveError) {
       console.error("Error saving messages to database:", saveError)
-      // Continue anyway - messages were sent
     }
 
-    // Update contact last_contacted timestamps
     const successfulContactIds = results.filter((r) => r.success).map((r) => r.contact_id)
 
     if (successfulContactIds.length > 0) {
