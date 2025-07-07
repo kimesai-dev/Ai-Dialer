@@ -1,21 +1,22 @@
-// paste starts here
 "use client"
 
 import { useState, useEffect, useRef } from "react"
 import { createClient } from "@supabase/supabase-js"
+
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { Avatar, AvatarFallback } from "@/components/ui/avatar"
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import {
-  Button, Input, Badge, Avatar, AvatarFallback,
-  Tabs, TabsList, TabsTrigger, Select, SelectContent, SelectItem, SelectTrigger, SelectValue
-} from "@/components/ui"
+  Select, SelectContent, SelectItem,
+  SelectTrigger, SelectValue
+} from "@/components/ui/select"
+
 import {
   Search, Send, Phone, Mail, Star, MoreVertical,
   Paperclip, Smile, DollarSign, RefreshCw
 } from "lucide-react"
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 interface Contact {
   id: string
@@ -40,6 +41,11 @@ interface Message {
   status: "sending" | "sent" | "delivered" | "read" | "failed"
 }
 
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+)
+
 export default function ConversationsClient() {
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
@@ -60,7 +66,6 @@ export default function ConversationsClient() {
 
       const response = await fetch(`/api/conversations?${params}`)
       const result = await response.json()
-
       if (result.data) {
         setContacts(result.data)
         setSelectedContact((prev) => prev || result.data[0] || null)
@@ -209,7 +214,6 @@ export default function ConversationsClient() {
 
   return (
     <div className="h-screen flex bg-gray-50">
-      {/* Sidebar */}
       <div className="w-80 bg-white border-r border-gray-200">
         <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           <h1 className="text-xl font-semibold">Conversations</h1>
@@ -268,7 +272,6 @@ export default function ConversationsClient() {
         </div>
       </div>
 
-      {/* Main Chat */}
       <div className="flex-1 flex flex-col">
         {selectedContact ? (
           <>
@@ -327,37 +330,6 @@ export default function ConversationsClient() {
           </div>
         )}
       </div>
-
-      {/* Contact Sidebar */}
-      {selectedContact && (
-        <div className="w-80 border-l border-gray-200 bg-white p-4 space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">{selectedContact.name}</h3>
-            <Button variant="ghost" size="sm">
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </div>
-          <div className="space-y-2 text-sm text-gray-600">
-            <p><Mail className="inline h-4 w-4 mr-2" /> {selectedContact.email || "Not provided"}</p>
-            <p><Phone className="inline h-4 w-4 mr-2" /> {selectedContact.phone}</p>
-            <p><span className="font-semibold">Location:</span> {selectedContact.location || "N/A"}</p>
-            <p>
-              <span className="font-semibold">Status:</span>{" "}
-              <Badge className={getStatusColor(selectedContact.status)}>{selectedContact.status || "Unknown"}</Badge>
-            </p>
-            <div>
-              <span className="font-semibold">Tags:</span>
-              <div className="flex flex-wrap gap-1 mt-1">
-                {(selectedContact.tags || []).map((tag, i) => (
-                  <Badge key={i} variant="secondary" className="text-xs">
-                    {tag}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
